@@ -24,12 +24,6 @@ typedef struct
 
 typedef struct
 {
-    Index _pointA;
-    Index _pointB;
-} Line3;
-
-typedef struct
-{
     float _row1[3];
     float _row2[3];
     float _row3[3];
@@ -95,8 +89,9 @@ void Normalize(Coord3* a)
     a->_z /= mag;
 }
 
-uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint)
+uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float* distance, float* u, float* v)
 {
+    //https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
     float dotParallel = GetDotProductFrom2Coord(&triangle->_normal, &ray->_direction);
     const float kEpsilon = 1e-8f;
 
@@ -107,18 +102,20 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint)
     }
 
     float planeDistance = GetDotProductFrom2Coord(&triangle->_normal, &triangle->_v0);
-    float distance = - ((GetDotProductFrom2Coord(&triangle->_normal, &ray->_origin) + planeDistance) / dotParallel);
+    *distance = - ((GetDotProductFrom2Coord(&triangle->_normal, &ray->_origin) + planeDistance) / dotParallel);
 
     //The triangle is "behind" the ray
-    if (distance < 0.0f)
+    if (*distance < 0.0f)
     {
         return 0;
     }
 
+    float area = GetMagnitudeFromCoord(&triangle->_normal) / 2.0f;  //area of the triangle
+
     // compute the intersection point
-    intersectPoint->_x = -(ray->_origin._x + distance*ray->_direction._x);
-    intersectPoint->_y = -(ray->_origin._y + distance*ray->_direction._y);
-    intersectPoint->_z = -(ray->_origin._z + distance*ray->_direction._z);
+    intersectPoint->_x = -(ray->_origin._x + *distance*ray->_direction._x);
+    intersectPoint->_y = -(ray->_origin._y + *distance*ray->_direction._y);
+    intersectPoint->_z = -(ray->_origin._z + *distance*ray->_direction._z);
 
     Coord3 edge;
     Coord3 C;
@@ -151,6 +148,8 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint)
 
     GetCrossProductFrom2Coord(&edge, &vp, &C);
 
+    *u = (GetMagnitudeFromCoord(&C) / 2.0f) / area;
+
     if (GetDotProductFrom2Coord(&triangle->_normal, &C) < 0.0f)
     {
         return 0;
@@ -166,6 +165,8 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint)
     vp._z = intersectPoint->_z - triangle->_v2._z;
 
     GetCrossProductFrom2Coord(&edge, &vp, &C);
+
+    *v = (GetMagnitudeFromCoord(&C) / 2.0f) / area;
 
     if (GetDotProductFrom2Coord(&triangle->_normal, &C) < 0.0f)
     {
@@ -263,75 +264,58 @@ void GetTriangleNormal(Triangle* triangle)
     B._z = triangle->_v2._z - triangle->_v0._z;
 
     GetCrossProductFrom2Coord(&A, &B, &triangle->_normal);
-    Normalize(&triangle->_normal);
 }
 
-uint8_t r,g,b;
-void DrawPoint(Coord3* coord, Camera* camera)
-{
-    static Coord3 axeXp = {1.0f, 0.0f, 0.0f};
-    static Coord3 axeYp = {0.0f, 1.0f, 0.0f};
-
-    float angle;
-    float mag, distance;
-    float resultx, resulty;
-
-    angle = GetAngleBetween2Coord(&axeXp, coord);
-    mag = GetDistanceBetween2Coord(&camera->_pos, coord);
-    resultx = cosf(angle)*mag;
-    angle = GetAngleBetween2Coord(&axeYp, coord);
-    resulty = cosf(angle)*mag;
-
-    SetPixel(camera, (uint16_t)resultx, (uint16_t)resulty, r, g, b);
-
-    //printf("Drawing at x:%d y:%d with color r:%u g:%u b:%u\n", (int)resultx, (int)resulty, r, g, b);
-    //SetSurfacePixel(surface, (int)resultx, (int)resulty, (SDL_Color){r, g, b, 255});
-}
-void DrawTriangle(Triangle* triangle, Camera* camera)
+void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
 {
     Ray ray;
     uint16_t x, y;
     uint8_t intersect;
     Coord3 intersectPoint;
 
-    ray._origin._x = 0.0f;
-    ray._origin._y = 0.0f;
-    ray._origin._z = 800.0f;
+    ray._origin = camera->_pos;
 
     float fov = 51.52f;
     float scale = tanf(Deg2rad(fov * 0.5f));
     float imageAspectRatio = (float)camera->_screenSize._w / (float)camera->_screenSize._h;
-
-    GetTriangleNormal(triangle);
+    float distance, u, v;
+    float smallestDistance = FLT_MAX;
+    Index i;
 
     for (y=0; y<camera->_screenSize._h; ++y)
     {
         for (x=0; x<camera->_screenSize._w; ++x)
         {
             // compute primary ray
-            ray._direction._x = (2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * imageAspectRatio * scale;
-            ray._direction._y = (1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * scale;
+            ray._direction._x = -(2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * imageAspectRatio * scale;
+            ray._direction._y = -(1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * scale;
             ray._direction._z = -1.0f;
             Normalize(&ray._direction);
 
-            intersect = RayIntersect(&ray, triangle, &intersectPoint);
-
-            float distance = 1.0f - GetDistanceBetween2Coord(&ray._origin, &intersectPoint) / 1000.0f;
-
-            if (intersect == 1)
+            for (i=0; i<trianglesSize; ++i)
             {
-                SetPixel(camera, x,y, (uint8_t)(255.0f*distance),0,0);
+                if (x==0 && y==0)
+                {
+                    GetTriangleNormal(triangles+i);
+                }
+
+                if ( RayIntersect(&ray, triangles+i, &intersectPoint, &distance, &u, &v) == 1 )
+                {
+                    if (distance < smallestDistance)
+                    {
+                        smallestDistance = distance;
+                        SetPixel(camera, x,y, (uint8_t)(u * 255.0f),(uint8_t)(v*255.0f),(uint8_t)((1.0f - u - v) * 255.0f));
+                    }
+                }
             }
+
+            smallestDistance = FLT_MAX;
         }
     }
 }
 void DrawObject3D(Object3D* object, Camera* camera)
 {
-    Index i;
-    for (i=0; i<object->_trianglesSize; ++i)
-    {
-        DrawTriangle(object->_triangles+i, camera);
-    }
+    DrawTriangles(object->_triangles, object->_trianglesSize, camera);
 }
 
 void CreateRotationMatrixOnAxeZ(Matrix3x3* matrix, float theta)
@@ -444,7 +428,6 @@ int main(int argc, char *argv[])
 {
     Index i;
     Coord3 coord;
-    unsigned char count=0;
 
     SDL_Init(SDL_INIT_EVERYTHING);
     SDL_Window *window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 320, SDL_WINDOW_SHOWN);
@@ -511,11 +494,6 @@ int main(int argc, char *argv[])
     testTriangle._v1 = (Coord3){30.0f, 0.0f, 0.0f};
     testTriangle._v2 = (Coord3){0.0f, 30.0f, 0.0f};
 
-    Triangle zeroTriangle;
-    zeroTriangle._v0 = (Coord3){-20.0f, -20.0f, 0.0f};
-    zeroTriangle._v1 = (Coord3){20.0f, 20.0f, 0.0f};
-    zeroTriangle._v2 = (Coord3){0.0f, 20.0f, 0.0f};
-
     while (quit == 0)
     {
         while (SDL_PollEvent(&event))
@@ -528,7 +506,19 @@ int main(int argc, char *argv[])
             {
                 if (event.key.keysym.sym == SDLK_w)
                 {
-                    camera._pos._y += 100.0f;
+                    camera._pos._z -= 100.0f;
+                }
+                if (event.key.keysym.sym == SDLK_s)
+                {
+                    camera._pos._z += 100.0f;
+                }
+                if (event.key.keysym.sym == SDLK_a)
+                {
+                    camera._pos._x += 100.0f;
+                }
+                if (event.key.keysym.sym == SDLK_d)
+                {
+                    camera._pos._x -= 100.0f;
                 }
                 if (event.key.keysym.sym == SDLK_SPACE)
                 {
@@ -561,31 +551,16 @@ int main(int argc, char *argv[])
         ApplyMatrixToObject(&rotationMatrixX, &monCube);
 
         DrawObject3D(&monCube, &camera);
-        DrawTriangle(&testTriangle, &camera);
-        r = 0;
-        g = 255;
-        b = 0;
-        DrawTriangle(&zeroTriangle, &camera);
+        DrawTriangles(&testTriangle, 1, &camera);
 
         ToSurfacePixels(surfaceScreen, &camera);
-
-        ++count;
-
-        if ((count&0x07) == 0)
-        {
-            count = 1;
-        }
-
-        r=0xFF;
-        g=0xFF;
-        b=0xFF;
 
         SDL_Texture* textureScreen = SDL_CreateTextureFromSurface(renderer, surfaceScreen);
         SDL_RenderCopy(renderer, textureScreen, NULL, NULL);
         SDL_DestroyTexture(textureScreen);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(60);
+        //SDL_Delay(60);
     }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
