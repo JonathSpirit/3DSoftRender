@@ -54,7 +54,7 @@ Object3D monCube = {(Triangle*)&monCubeTriangles, sizeof(monCubeTriangles) / siz
 uint8_t screen[640*320*3];
 Camera camera = {{0.0f,0.0f,0.0f}, {640,320}, (uint8_t*)&screen, 51.52f};
 
-Matrix3x3 rotationMatrixZ, rotationMatrixX;
+Matrix3x3 rotationMatrixZ, rotationMatrixX, rotationMatrixY;
 
 int main(int argc, char *argv[])
 {
@@ -74,8 +74,9 @@ int main(int argc, char *argv[])
 
     unsigned int quit = 0;
 
-    CreateRotationMatrixOnAxeZ(&rotationMatrixZ, 0.175f);
     CreateRotationMatrixOnAxeX(&rotationMatrixX, 0.087f);
+    CreateRotationMatrixOnAxeY(&rotationMatrixY, 0.099f);
+    CreateRotationMatrixOnAxeZ(&rotationMatrixZ, 0.175f);
 
     //Translating
     for (i=0; i<monCube._trianglesSize; ++i)
@@ -184,6 +185,7 @@ int main(int argc, char *argv[])
 
         ApplyMatrixToObject(&rotationMatrixZ, &monCube);
         ApplyMatrixToObject(&rotationMatrixX, &monCube);
+        ApplyMatrixToObject(&rotationMatrixY, &monCube);
 
         clock_t before = clock();
         DrawObject3D(&monCube, &camera);
