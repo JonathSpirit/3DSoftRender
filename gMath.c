@@ -196,10 +196,52 @@ void CreateRotationMatrixOnAxeZ(Matrix3x3* matrix, float theta)
     matrix->_row3[1] = 0.0f;
     matrix->_row3[2] = 1.0f;
 }
+void CreateTranslationMatrix(Matrix3x3* matrix, float x, float y, float z)
+{
+    matrix->_row1[0] = 1.0f;
+    matrix->_row1[1] = 0.0f;
+    matrix->_row1[2] = 0.0f;
 
-void MultiplyMatrixWithCoord(Matrix3x3* matrix, Coord3* coord, Coord3* result)
+    matrix->_row2[0] = 0.0f;
+    matrix->_row2[1] = 1.0f;
+    matrix->_row2[2] = 0.0f;
+
+    matrix->_row3[0] = x;
+    matrix->_row3[1] = y;
+    matrix->_row3[2] = z;
+}
+void CreateIdentityMatrix(Matrix3x3* matrix)
+{
+    matrix->_row1[0] = 1.0f;
+    matrix->_row1[1] = 0.0f;
+    matrix->_row1[2] = 0.0f;
+
+    matrix->_row2[0] = 0.0f;
+    matrix->_row2[1] = 1.0f;
+    matrix->_row2[2] = 0.0f;
+
+    matrix->_row3[0] = 0.0f;
+    matrix->_row3[1] = 0.0f;
+    matrix->_row3[2] = 1.0f;
+}
+
+void MultiplyCoordWithMatrix(Matrix3x3* matrix, Coord3* coord, Coord3* result)
 {
     result->_x = matrix->_row1[0]*coord->_x + matrix->_row1[1]*coord->_y + matrix->_row1[2]*coord->_z;
     result->_y = matrix->_row2[0]*coord->_x + matrix->_row2[1]*coord->_y + matrix->_row2[2]*coord->_z;
     result->_z = matrix->_row3[0]*coord->_x + matrix->_row3[1]*coord->_y + matrix->_row3[2]*coord->_z;
+}
+void MultiplyMatrixWithMatrix(Matrix3x3* matrixA, Matrix3x3* matrixB, Matrix3x3* result)
+{
+    result->_row1[0] = matrixA->_row1[0]*matrixB->_row1[0] + matrixA->_row1[1]*matrixB->_row2[0] + matrixA->_row1[2]*matrixB->_row3[0];
+    result->_row1[1] = matrixA->_row1[0]*matrixB->_row1[1] + matrixA->_row1[1]*matrixB->_row2[1] + matrixA->_row1[2]*matrixB->_row3[1];
+    result->_row1[2] = matrixA->_row1[0]*matrixB->_row1[2] + matrixA->_row1[1]*matrixB->_row2[2] + matrixA->_row1[2]*matrixB->_row3[2];
+
+    result->_row2[0] = matrixA->_row2[0]*matrixB->_row1[0] + matrixA->_row2[1]*matrixB->_row2[0] + matrixA->_row2[2]*matrixB->_row3[0];
+    result->_row2[1] = matrixA->_row2[0]*matrixB->_row1[1] + matrixA->_row2[1]*matrixB->_row2[1] + matrixA->_row2[2]*matrixB->_row3[1];
+    result->_row2[2] = matrixA->_row2[0]*matrixB->_row1[2] + matrixA->_row2[1]*matrixB->_row2[2] + matrixA->_row2[2]*matrixB->_row3[2];
+
+    result->_row3[0] = matrixA->_row3[0]*matrixB->_row1[0] + matrixA->_row3[1]*matrixB->_row2[0] + matrixA->_row3[2]*matrixB->_row3[0];
+    result->_row3[1] = matrixA->_row3[0]*matrixB->_row1[1] + matrixA->_row3[1]*matrixB->_row2[1] + matrixA->_row3[2]*matrixB->_row3[1];
+    result->_row3[2] = matrixA->_row3[0]*matrixB->_row1[2] + matrixA->_row3[1]*matrixB->_row2[2] + matrixA->_row3[2]*matrixB->_row3[2];
 }

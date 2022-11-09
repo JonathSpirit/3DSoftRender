@@ -45,5 +45,8 @@ void GetTriangleNormal(Triangle* triangle);
 void CreateRotationMatrixOnAxeX(Matrix3x3* matrix, float theta);
 void CreateRotationMatrixOnAxeY(Matrix3x3* matrix, float theta);
 void CreateRotationMatrixOnAxeZ(Matrix3x3* matrix, float theta);
+void CreateTranslationMatrix(Matrix3x3* matrix, float x, float y, float z);
+void CreateIdentityMatrix(Matrix3x3* matrix);
 
-void MultiplyMatrixWithCoord(Matrix3x3* matrix, Coord3* coord, Coord3* result);
+void MultiplyCoordWithMatrix(Matrix3x3* matrix, Coord3* coord, Coord3* result);
+void MultiplyMatrixWithMatrix(Matrix3x3* matrixA, Matrix3x3* matrixB, Matrix3x3* result);

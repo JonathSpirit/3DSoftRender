@@ -35,6 +35,23 @@ void ClearCamera(Camera* camera)
         camera->_screenData[i] = 0x00;
     }
 }
+void RotateCamera(Camera* camera, float thetaX, float thetaY, float thetaZ)
+{
+    Matrix3x3 rotationMatrixX;
+    Matrix3x3 rotationMatrixY;
+    Matrix3x3 rotationMatrixZ;
+
+    CreateRotationMatrixOnAxeX(&rotationMatrixX, thetaX);
+    CreateRotationMatrixOnAxeY(&rotationMatrixY, thetaY);
+    CreateRotationMatrixOnAxeZ(&rotationMatrixZ, thetaZ);
+
+    Matrix3x3 buffer = camera->_rotationMatrix;
+    MultiplyMatrixWithMatrix(&buffer, &rotationMatrixX, &camera->_rotationMatrix);
+    buffer = camera->_rotationMatrix;
+    MultiplyMatrixWithMatrix(&buffer, &rotationMatrixY, &camera->_rotationMatrix);
+    buffer = camera->_rotationMatrix;
+    MultiplyMatrixWithMatrix(&buffer, &rotationMatrixZ, &camera->_rotationMatrix);
+}
 
 void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
 {
@@ -42,7 +59,10 @@ void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
     uint16_t x, y;
     Coord3 intersectPoint;
 
+    //MultiplyCoordWithMatrix(&camera->_rotationMatrix, &camera->_origin, &ray._origin);
     ray._origin = camera->_origin;
+    //ray._origin = (Coord3){0,0,0};
+    //MultiplyCoordWithMatrix(&camera->_rotationMatrix, &ray._origin, &ray._origin);
 
     float distance, u, v;
     float smallestDistance = FLT_MAX;
@@ -52,10 +72,16 @@ void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
     {
         for (x=0; x<camera->_screenSize._w; ++x)
         {
-            // compute primary ray
+            //compute primary ray
             ray._direction._x = -(2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * camera->_imageAspectRatio * camera->_scale;
             ray._direction._y = -(1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * camera->_scale;
             ray._direction._z = -1.0f;
+            MultiplyCoordWithMatrix(&camera->_rotationMatrix, &ray._direction, &ray._direction);
+
+            //ray._direction._x = ray._direction._x - ray._origin._x;
+            //ray._direction._y = ray._direction._y - ray._origin._y;
+            //ray._direction._z = ray._direction._z - ray._origin._z;
+
             Normalize(&ray._direction);
 
             for (i=0; i<trianglesSize; ++i)
@@ -99,7 +125,7 @@ void ApplyMatrixToObject(Matrix3x3* matrix, Object3D* object)
         oldPos._y -= object->_center._y;
         oldPos._z -= object->_center._z;
 
-        MultiplyMatrixWithCoord(matrix, &oldPos, &newPos);
+        MultiplyCoordWithMatrix(matrix, &oldPos, &newPos);
         newPos._x += object->_center._x;
         newPos._y += object->_center._y;
         newPos._z += object->_center._z;
@@ -114,7 +140,7 @@ void ApplyMatrixToObject(Matrix3x3* matrix, Object3D* object)
         oldPos._y -= object->_center._y;
         oldPos._z -= object->_center._z;
 
-        MultiplyMatrixWithCoord(matrix, &oldPos, &newPos);
+        MultiplyCoordWithMatrix(matrix, &oldPos, &newPos);
         newPos._x += object->_center._x;
         newPos._y += object->_center._y;
         newPos._z += object->_center._z;
@@ -127,7 +153,7 @@ void ApplyMatrixToObject(Matrix3x3* matrix, Object3D* object)
         oldPos._y -= object->_center._y;
         oldPos._z -= object->_center._z;
 
-        MultiplyMatrixWithCoord(matrix, &oldPos, &newPos);
+        MultiplyCoordWithMatrix(matrix, &oldPos, &newPos);
         newPos._x += object->_center._x;
         newPos._y += object->_center._y;
         newPos._z += object->_center._z;

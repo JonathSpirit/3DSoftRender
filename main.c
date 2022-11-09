@@ -130,6 +130,8 @@ int main(int argc, char *argv[])
     SetCameraFov(&camera);
     SetCameraScreen(&camera);
 
+    CreateIdentityMatrix(&camera._rotationMatrix);
+
     while (quit == 0)
     {
         while (SDL_PollEvent(&event))
@@ -140,13 +142,42 @@ int main(int argc, char *argv[])
             }
             if (event.type == SDL_KEYDOWN)
             {
+                if (event.key.keysym.sym == SDLK_q)
+                {
+                    RotateCamera(&camera, 0.0f,-Deg2rad(10.0f),0.0f);
+                }
+                if (event.key.keysym.sym == SDLK_e)
+                {
+                    RotateCamera(&camera, 0.0f,Deg2rad(10.0f),0.0f);
+                }
+
                 if (event.key.keysym.sym == SDLK_w)
                 {
-                    camera._origin._z -= 100.0f;
+                    Coord3 forward = {0.0f, 0.0f, -1.0f};
+                    MultiplyCoordWithMatrix(&camera._rotationMatrix, &forward, &forward);
+                    Normalize(&forward);
+
+                    forward._x *= 100.0f;
+                    forward._y *= 100.0f;
+                    forward._z *= 100.0f;
+
+                    camera._origin._x = camera._origin._x + forward._x;
+                    camera._origin._y = camera._origin._y + forward._y;
+                    camera._origin._z = camera._origin._z + forward._z;
                 }
                 if (event.key.keysym.sym == SDLK_s)
                 {
-                    camera._origin._z += 100.0f;
+                    Coord3 forward = {0.0f, 0.0f, -1.0f};
+                    MultiplyCoordWithMatrix(&camera._rotationMatrix, &forward, &forward);
+                    Normalize(&forward);
+
+                    forward._x *= -100.0f;
+                    forward._y *= -100.0f;
+                    forward._z *= -100.0f;
+
+                    camera._origin._x = camera._origin._x + forward._x;
+                    camera._origin._y = camera._origin._y + forward._y;
+                    camera._origin._z = camera._origin._z + forward._z;
                 }
                 if (event.key.keysym.sym == SDLK_a)
                 {

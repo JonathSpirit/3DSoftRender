@@ -15,6 +15,8 @@ typedef struct
     float _fov;
     float _scale;
     float _imageAspectRatio;
+
+    Matrix3x3 _rotationMatrix;
 } Camera;
 
 typedef struct
@@ -31,6 +33,7 @@ void SetCameraFov(Camera* camera);
 void SetCameraScreen(Camera* camera);
 
 void ClearCamera(Camera* camera);
+void RotateCamera(Camera* camera, float thetaX, float thetaY, float thetaZ);
 
 void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera);
 void DrawObject3D(Object3D* object, Camera* camera);
