@@ -231,6 +231,14 @@ void MultiplyCoordWithMatrix(Matrix3x3* matrix, Coord3* coord, Coord3* result)
     result->_y = matrix->_row2[0]*coord->_x + matrix->_row2[1]*coord->_y + matrix->_row2[2]*coord->_z;
     result->_z = matrix->_row3[0]*coord->_x + matrix->_row3[1]*coord->_y + matrix->_row3[2]*coord->_z;
 }
+void MultiplyCoordWithMatrixInPlace(Matrix3x3* matrix, Coord3* coord)
+{
+    Coord3 result;
+    result._x = matrix->_row1[0]*coord->_x + matrix->_row1[1]*coord->_y + matrix->_row1[2]*coord->_z;
+    result._y = matrix->_row2[0]*coord->_x + matrix->_row2[1]*coord->_y + matrix->_row2[2]*coord->_z;
+    result._z = matrix->_row3[0]*coord->_x + matrix->_row3[1]*coord->_y + matrix->_row3[2]*coord->_z;
+    *coord = result;
+}
 void MultiplyMatrixWithMatrix(Matrix3x3* matrixA, Matrix3x3* matrixB, Matrix3x3* result)
 {
     result->_row1[0] = matrixA->_row1[0]*matrixB->_row1[0] + matrixA->_row1[1]*matrixB->_row2[0] + matrixA->_row1[2]*matrixB->_row3[0];

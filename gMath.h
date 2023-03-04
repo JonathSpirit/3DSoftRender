@@ -49,4 +49,5 @@ void CreateTranslationMatrix(Matrix3x3* matrix, float x, float y, float z);
 void CreateIdentityMatrix(Matrix3x3* matrix);
 
 void MultiplyCoordWithMatrix(Matrix3x3* matrix, Coord3* coord, Coord3* result);
+void MultiplyCoordWithMatrixInPlace(Matrix3x3* matrix, Coord3* coord);
 void MultiplyMatrixWithMatrix(Matrix3x3* matrixA, Matrix3x3* matrixB, Matrix3x3* result);

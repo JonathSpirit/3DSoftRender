@@ -2,6 +2,9 @@
 #include "gRender.h"
 #include "time.h"
 
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 320
+
 void SetSurfacePixel(SDL_Surface* surface, int x, int y, SDL_Color color)
 {
     if (surface == NULL)
@@ -51,8 +54,8 @@ Triangle monCubeTriangles[12] = {
 
 Object3D monCube = {(Triangle*)&monCubeTriangles, sizeof(monCubeTriangles) / sizeof(Triangle), {10.0f, 10.0f, 10.0f}};
 
-uint8_t screen[640*320*3];
-Camera camera = {{0.0f,0.0f,0.0f}, {640,320}, (uint8_t*)&screen, 51.52f};
+uint8_t screen[SCREEN_WIDTH*SCREEN_HEIGHT*3];
+Camera camera = {{0.0f,0.0f,0.0f}, {SCREEN_WIDTH,SCREEN_HEIGHT}, (uint8_t*)&screen, 51.52f};
 
 Matrix3x3 rotationMatrixZ, rotationMatrixX, rotationMatrixY;
 
@@ -62,11 +65,11 @@ int main(int argc, char *argv[])
     Coord3 coord;
 
     SDL_Init(SDL_INIT_EVERYTHING);
-    SDL_Window *window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 320, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Event event;
 
-    SDL_Surface* surfaceScreen = SDL_CreateRGBSurfaceWithFormat(0, 640, 320, 32, SDL_PIXELFORMAT_RGB888);
+    SDL_Surface* surfaceScreen = SDL_CreateRGBSurfaceWithFormat(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_PIXELFORMAT_RGB888);
     if (surfaceScreen == NULL)
     {
         return -1;
@@ -154,7 +157,7 @@ int main(int argc, char *argv[])
                 if (event.key.keysym.sym == SDLK_w)
                 {
                     Coord3 forward = {0.0f, 0.0f, -1.0f};
-                    MultiplyCoordWithMatrix(&camera._rotationMatrix, &forward, &forward);
+                    MultiplyCoordWithMatrixInPlace(&camera._rotationMatrix, &forward);
                     Normalize(&forward);
 
                     forward._x *= 100.0f;
@@ -167,25 +170,48 @@ int main(int argc, char *argv[])
                 }
                 if (event.key.keysym.sym == SDLK_s)
                 {
-                    Coord3 forward = {0.0f, 0.0f, -1.0f};
-                    MultiplyCoordWithMatrix(&camera._rotationMatrix, &forward, &forward);
-                    Normalize(&forward);
+                    //move to the back
+                    Coord3 backward = {0.0f, 0.0f, 1.0f};
+                    MultiplyCoordWithMatrixInPlace(&camera._rotationMatrix, &backward);
+                    Normalize(&backward);
 
-                    forward._x *= -100.0f;
-                    forward._y *= -100.0f;
-                    forward._z *= -100.0f;
+                    backward._x *= 100.0f;
+                    backward._y *= 100.0f;
+                    backward._z *= 100.0f;
 
-                    camera._origin._x = camera._origin._x + forward._x;
-                    camera._origin._y = camera._origin._y + forward._y;
-                    camera._origin._z = camera._origin._z + forward._z;
+                    camera._origin._x = camera._origin._x + backward._x;
+                    camera._origin._y = camera._origin._y + backward._y;
+                    camera._origin._z = camera._origin._z + backward._z;
                 }
                 if (event.key.keysym.sym == SDLK_a)
                 {
-                    camera._origin._x += 100.0f;
+                    //move to the left
+                    Coord3 left = {1.0f, 0.0f, 0.0f};
+                    MultiplyCoordWithMatrixInPlace(&camera._rotationMatrix, &left);
+                    Normalize(&left);
+
+                    left._x *= 100.0f;
+                    left._y *= 100.0f;
+                    left._z *= 100.0f;
+
+                    camera._origin._x = camera._origin._x + left._x;
+                    camera._origin._y = camera._origin._y + left._y;
+                    camera._origin._z = camera._origin._z + left._z;
                 }
                 if (event.key.keysym.sym == SDLK_d)
                 {
-                    camera._origin._x -= 100.0f;
+                    //move to the right
+                    Coord3 right = {-1.0f, 0.0f, 0.0f};
+                    MultiplyCoordWithMatrixInPlace(&camera._rotationMatrix, &right);
+                    Normalize(&right);
+
+                    right._x *= 100.0f;
+                    right._y *= 100.0f;
+                    right._z *= 100.0f;
+
+                    camera._origin._x = camera._origin._x + right._x;
+                    camera._origin._y = camera._origin._y + right._y;
+                    camera._origin._z = camera._origin._z + right._z;
                 }
                 if (event.key.keysym.sym == SDLK_SPACE)
                 {

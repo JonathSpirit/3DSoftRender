@@ -59,28 +59,23 @@ void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
     uint16_t x, y;
     Coord3 intersectPoint;
 
-    //MultiplyCoordWithMatrix(&camera->_rotationMatrix, &camera->_origin, &ray._origin);
     ray._origin = camera->_origin;
-    //ray._origin = (Coord3){0,0,0};
-    //MultiplyCoordWithMatrix(&camera->_rotationMatrix, &ray._origin, &ray._origin);
 
     float distance, u, v;
     float smallestDistance = FLT_MAX;
     Index i;
+
+    Coord3 direction;
 
     for (y=0; y<camera->_screenSize._h; ++y)
     {
         for (x=0; x<camera->_screenSize._w; ++x)
         {
             //compute primary ray
-            ray._direction._x = -(2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * camera->_imageAspectRatio * camera->_scale;
-            ray._direction._y = -(1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * camera->_scale;
-            ray._direction._z = -1.0f;
-            MultiplyCoordWithMatrix(&camera->_rotationMatrix, &ray._direction, &ray._direction);
-
-            //ray._direction._x = ray._direction._x - ray._origin._x;
-            //ray._direction._y = ray._direction._y - ray._origin._y;
-            //ray._direction._z = ray._direction._z - ray._origin._z;
+            direction._x = -(2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * camera->_imageAspectRatio * camera->_scale;
+            direction._y = -(1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * camera->_scale;
+            direction._z = -1.0f;
+            MultiplyCoordWithMatrix(&camera->_rotationMatrix, &direction, &ray._direction);
 
             Normalize(&ray._direction);
 
