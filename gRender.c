@@ -1,6 +1,7 @@
 #include "gRender.h"
 #include "math.h"
 #include "float.h"
+#include "SDL_surface.h"
 
 void SetPixel(Camera* camera, uint16_t x, uint16_t y, uint8_t r, uint8_t g,  uint8_t b)
 {
@@ -53,6 +54,7 @@ void RotateCamera(Camera* camera, float thetaX, float thetaY, float thetaZ)
     MultiplyMatrixWithMatrix(&buffer, &rotationMatrixZ, &camera->_rotationMatrix);
 }
 
+extern SDL_Surface* gTextureTest;
 void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
 {
     Ray ray;
@@ -90,8 +92,26 @@ void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
                 {
                     if (distance < smallestDistance)
                     {
+                        uint16_t textureX = (uint16_t)(u * (float)gTextureTest->w);
+                        uint16_t textureY = (uint16_t)(v * (float)gTextureTest->h);
+
+                        //clamp
+                        if (textureX >= gTextureTest->w)
+                        {
+                            textureX = gTextureTest->w - 1;
+                        }
+                        if (textureY >= gTextureTest->h)
+                        {
+                            textureY = gTextureTest->h - 1;
+                        }
+
+                        uint8_t* pixelData = (uint8_t*)gTextureTest->pixels + (textureY * gTextureTest->pitch + textureX * gTextureTest->format->BytesPerPixel);
+
                         smallestDistance = distance;
-                        SetPixel(camera, x,y, (uint8_t)(u * 255.0f),(uint8_t)(v*255.0f),(uint8_t)((1.0f - u - v) * 255.0f));
+
+                        SetPixel(camera, x,y, *pixelData, *(pixelData+1), *(pixelData+2));
+
+                        //SetPixel(camera, x,y, (uint8_t)(u * 255.0f),(uint8_t)(v*255.0f),(uint8_t)((1.0f - u - v) * 255.0f));
                     }
                 }
             }

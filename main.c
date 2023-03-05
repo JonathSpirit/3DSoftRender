@@ -1,6 +1,7 @@
 #include "SDL.h"
 #include "gRender.h"
-#include "time.h"
+#include <time.h>
+#include <stdio.h>
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 320
@@ -59,6 +60,8 @@ Camera camera = {{0.0f,0.0f,0.0f}, {SCREEN_WIDTH,SCREEN_HEIGHT}, (uint8_t*)&scre
 
 Matrix3x3 rotationMatrixZ, rotationMatrixX, rotationMatrixY;
 
+SDL_Surface* gTextureTest = NULL;
+
 int main(int argc, char *argv[])
 {
     Index i;
@@ -74,6 +77,21 @@ int main(int argc, char *argv[])
     {
         return -1;
     }
+
+    SDL_Surface* rawTexture = SDL_LoadBMP("texture.bmp");
+    if (rawTexture == NULL)
+    {
+        printf("Unable to load image %s! SDL Error: %s", "texture.bmp", SDL_GetError());
+        return -1;
+    }
+
+    gTextureTest = SDL_ConvertSurfaceFormat(rawTexture, SDL_PIXELFORMAT_BGR888, 0);
+    if (gTextureTest == NULL)
+    {
+        printf("Unable to convert surface ! SDL Error: %s", SDL_GetError());
+        return -1;
+    }
+    SDL_FreeSurface(rawTexture);
 
     unsigned int quit = 0;
 
