@@ -29,6 +29,7 @@ typedef struct
 } Ray;
 
 //https://people.eecs.ku.edu/~jrmiller/Courses/VectorGeometry/VectorOperations.html
+float GetInverseMagnitudeFromCoord(Coord3* a);
 float GetMagnitudeFromCoord(Coord3* a);
 float GetDotProductFrom2Coord(Coord3* a, Coord3* b);
 void GetCrossProductFrom2Coord(Coord3* a, Coord3* b, Coord3* result);

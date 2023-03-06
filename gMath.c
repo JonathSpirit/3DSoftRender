@@ -2,28 +2,19 @@
 #define _USE_MATH_DEFINES
 #include "math.h"
 
-/*float Q_rsqrt(float number) TODO
+float GetInverseMagnitudeFromCoord(Coord3* a)
 {
-    long i;
-    float x2, y;
-    const float threehalfs = 1.5F;
+    float x = a->_x * a->_x + a->_y * a->_y + a->_z * a->_z;
+    const float xhalf = 0.5f * x;
+    int i = *(int*)&x;
+    i = 0x5f3759df - (i >> 1);
+    x = *(float*)&i;
+    x = x*(1.5f-(xhalf*x*x));
+    //x = x*(1.5f-(xhalf*x*x));
+    return x;
 
-    x2 = number * 0.5F;
-    y = number;
-    i = *(long*)&y;                       // evil floating point bit level hacking
-    i = 0x5f3759df - (i >> 1);               // what the fuck? 
-    y = *(float*)&i;
-    y = y * (threehalfs - (x2 * y * y));   // 1st iteration
-    //	y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
-
-    return y;
+    //return 1.0f / sqrtf( a->_x*a->_x + a->_y*a->_y + a->_z*a->_z );
 }
-
-float GetMagnitudeFromCoord2(Coord3* a)
-{
-    return Q_rsqrt(a->_x * a->_x + a->_y * a->_y + a->_z * a->_z);
-}*/
-
 float GetMagnitudeFromCoord(Coord3* a)
 {
     return sqrtf( a->_x*a->_x + a->_y*a->_y + a->_z*a->_z );
@@ -55,10 +46,10 @@ float GetAngleBetween2Coord(Coord3* a, Coord3* b)
 }
 void Normalize(Coord3* a)
 {
-    float mag = GetMagnitudeFromCoord(a);
-    a->_x /= mag;
-    a->_y /= mag;
-    a->_z /= mag;
+    float mag = GetInverseMagnitudeFromCoord(a);
+    a->_x *= mag;
+    a->_y *= mag;
+    a->_z *= mag;
 }
 
 uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float* distance, float* u, float* v)
@@ -82,7 +73,7 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float
         return 0;
     }
 
-    float area = GetMagnitudeFromCoord(&triangle->_normal) / 2.0f;  //area of the triangle
+    float area = 0.5f / GetInverseMagnitudeFromCoord(&triangle->_normal); //area of the triangle
 
     // compute the intersection point
     intersectPoint->_x = -(ray->_origin._x + *distance*ray->_direction._x);
@@ -120,7 +111,7 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float
 
     GetCrossProductFrom2Coord(&edge, &vp, &C);
 
-    *u = (GetMagnitudeFromCoord(&C) / 2.0f) / area;
+    *u = (0.5f / GetInverseMagnitudeFromCoord(&C)) / area;
 
     if (GetDotProductFrom2Coord(&triangle->_normal, &C) < 0.0f)
     {
@@ -138,7 +129,7 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float
 
     GetCrossProductFrom2Coord(&edge, &vp, &C);
 
-    *v = (GetMagnitudeFromCoord(&C) / 2.0f) / area;
+    *v = (0.5f / GetInverseMagnitudeFromCoord(&C)) / area;
 
     if (GetDotProductFrom2Coord(&triangle->_normal, &C) < 0.0f)
     {

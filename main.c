@@ -1,6 +1,5 @@
 #include "SDL.h"
 #include "gRender.h"
-#include <time.h>
 #include <stdio.h>
 
 #define SCREEN_WIDTH 640
@@ -56,7 +55,7 @@ Triangle monCubeTriangles[12] = {
 Object3D monCube = {(Triangle*)&monCubeTriangles, sizeof(monCubeTriangles) / sizeof(Triangle), {10.0f, 10.0f, 10.0f}};
 
 uint8_t screen[SCREEN_WIDTH*SCREEN_HEIGHT*3];
-Camera camera = {{0.0f,0.0f,0.0f}, {SCREEN_WIDTH,SCREEN_HEIGHT}, (uint8_t*)&screen, 51.52f};
+Camera camera = {{0.0f,0.0f,500.0f}, {SCREEN_WIDTH,SCREEN_HEIGHT}, (uint8_t*)&screen, 51.52f};
 
 Matrix3x3 rotationMatrixZ, rotationMatrixX, rotationMatrixY;
 
@@ -64,10 +63,27 @@ SDL_Surface* gTextureTest = NULL;
 
 int main(int argc, char *argv[])
 {
+    /*Coord3 testCoord = {204.15f, -2362.2155f};
+    float testResult;
+    uint64_t b;
+
+    uint32_t testFirst = SDL_GetTicks();
+    for (b=0; b<4000000000; ++b)
+    {
+        testResult = GetInverseMagnitudeFromCoord(&testCoord);
+    }
+    uint32_t diffResult = SDL_GetTicks() - testFirst;
+    printf("result ms : %u ms", diffResult);
+
+    //21626 ms
+    //22934 ms (no fast sqrt)
+
+    return 0;*/
+
     Index i;
     Coord3 coord;
 
-    SDL_Init(SDL_INIT_EVERYTHING);
+    SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Event event;
@@ -152,6 +168,10 @@ int main(int argc, char *argv[])
     SetCameraScreen(&camera);
 
     CreateIdentityMatrix(&camera._rotationMatrix);
+
+
+    uint32_t before = SDL_GetTicks();
+    uint32_t diff = 0;
 
     while (quit == 0)
     {
@@ -262,11 +282,7 @@ int main(int argc, char *argv[])
         ApplyMatrixToObject(&rotationMatrixX, &monCube);
         ApplyMatrixToObject(&rotationMatrixY, &monCube);
 
-        clock_t before = clock();
         DrawObject3D(&monCube, &camera);
-        clock_t difference = clock() - before;
-        int msec = difference * 1000 / CLOCKS_PER_SEC;
-        printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
         DrawTriangles(&testTriangle, 1, &camera);
 
@@ -277,6 +293,10 @@ int main(int argc, char *argv[])
         SDL_DestroyTexture(textureScreen);
 
         SDL_RenderPresent(renderer);
+
+        diff = SDL_GetTicks() - before;
+        printf("ticks %u ms\n", diff);
+        before = SDL_GetTicks();
         //SDL_Delay(60);
     }
     SDL_DestroyRenderer(renderer);
