@@ -1,6 +1,7 @@
 #include "gMath.h"
 #define _USE_MATH_DEFINES
 #include "math.h"
+#include "float.h"
 
 float GetInverseMagnitudeFromCoord(Coord3* a)
 {
@@ -56,10 +57,9 @@ uint8_t RayIntersect(Ray* ray, Triangle* triangle, Coord3* intersectPoint, float
 {
     //https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
     float dotParallel = GetDotProductFrom2Coord(&triangle->_normal, &ray->_direction);
-    const float kEpsilon = 1e-8f;
 
     //The Ray And The Triangle Are Parallel
-    if (fabsf(dotParallel) < kEpsilon)
+    if (fabsf(dotParallel) < FLT_EPSILON)
     {
         return 0;
     }

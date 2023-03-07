@@ -4,6 +4,7 @@
 
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 320
+#define AVERAGE_TICKS_COUNT 40
 
 void SetSurfacePixel(SDL_Surface* surface, int x, int y, SDL_Color color)
 {
@@ -20,25 +21,6 @@ void SetSurfacePixel(SDL_Surface* surface, int x, int y, SDL_Color color)
                                             + y * surface->pitch
                                             + x * surface->format->BytesPerPixel);
     *target_pixel = SDL_MapRGBA(surface->format, color.r, color.g, color.b, color.a);
-}
-
-void ToSurfacePixels(SDL_Surface* surface, Camera* camera)
-{
-    if (surface->w == camera->_screenSize._w &&
-        surface->h == camera->_screenSize._h)
-    {
-        uint16_t x, y;
-        uint8_t* pixelData = camera->_screenData;
-
-        for (y=0; y<camera->_screenSize._h; ++y)
-        {
-            for (x=0; x<camera->_screenSize._w; ++x)
-            {
-                SetSurfacePixel(surface, x, y, (SDL_Color){*pixelData, *(pixelData+1), *(pixelData+2), 255});
-                pixelData += 3;
-            }
-        }
-    }
 }
 
 Triangle monCubeTriangles[12] = {
@@ -80,17 +62,25 @@ int main(int argc, char *argv[])
 
     return 0;*/
 
-    Index i;
+    Index i, a;
     Coord3 coord;
 
     SDL_Init(SDL_INIT_EVENTS | SDL_INIT_VIDEO);
     SDL_Window *window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
     SDL_Event event;
 
-    SDL_Surface* surfaceScreen = SDL_CreateRGBSurfaceWithFormat(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, SDL_PIXELFORMAT_RGB888);
-    if (surfaceScreen == NULL)
+    SDL_Texture* textureScreen = SDL_CreateTexture(renderer,
+                                                   SDL_PIXELFORMAT_RGB888,
+                                                   SDL_TEXTUREACCESS_STREAMING,
+                                                   SCREEN_WIDTH, SCREEN_HEIGHT);
+    void* texturePixels = NULL;
+    void* surfacePixels = NULL;
+    int texturePitch = 0; //unused but required
+
+    if (textureScreen == NULL)
     {
+        printf("Unable to create texture ! SDL Error: %s", SDL_GetError());
         return -1;
     }
 
@@ -123,20 +113,12 @@ int main(int argc, char *argv[])
         coord._y *= 10.0f;
         coord._z *= 10.0f;
 
-        /*coord._x += 400.0f;
-        coord._y += 100.0f;
-        coord._z += 0.0f;*/
-
         monCube._triangles[i]._v0 = coord;
 
         coord = monCube._triangles[i]._v1;
         coord._x *= 10.0f;
         coord._y *= 10.0f;
         coord._z *= 10.0f;
-
-        /*coord._x += 400.0f;
-        coord._y += 100.0f;
-        coord._z += 0.0f;*/
 
         monCube._triangles[i]._v1 = coord;
 
@@ -145,19 +127,11 @@ int main(int argc, char *argv[])
         coord._y *= 10.0f;
         coord._z *= 10.0f;
 
-        /*coord._x += 400.0f;
-        coord._y += 100.0f;
-        coord._z += 0.0f;*/
-
         monCube._triangles[i]._v2 = coord;
     }
     monCube._center._x *= 10.0f;
     monCube._center._y *= 10.0f;
     monCube._center._z *= 10.0f;
-
-    /*monCube._center._x += 400.0f;
-    monCube._center._y += 100.0f;
-    monCube._center._z += 0.0f;*/
 
     Triangle testTriangle;
     testTriangle._v0 = (Coord3){0.0f, 0.0f, 0.0f};
@@ -169,9 +143,9 @@ int main(int argc, char *argv[])
 
     CreateIdentityMatrix(&camera._rotationMatrix);
 
-
-    uint32_t before = SDL_GetTicks();
-    uint32_t diff = 0;
+    uint32_t ticksBefore = SDL_GetTicks();
+    uint32_t ticksTotals = 0;
+    uint32_t ticksCount = 0;
 
     while (quit == 0)
     {
@@ -275,7 +249,6 @@ int main(int argc, char *argv[])
         }
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-        SDL_FillRect(surfaceScreen, NULL, SDL_MapRGB(surfaceScreen->format, 0,0,0));
         ClearCamera(&camera);
 
         ApplyMatrixToObject(&rotationMatrixZ, &monCube);
@@ -283,22 +256,46 @@ int main(int argc, char *argv[])
         ApplyMatrixToObject(&rotationMatrixY, &monCube);
 
         DrawObject3D(&monCube, &camera);
-
         DrawTriangles(&testTriangle, 1, &camera);
 
-        ToSurfacePixels(surfaceScreen, &camera);
+        SDL_LockTexture(textureScreen,
+                        NULL,
+                        &texturePixels, &texturePitch);
+        surfacePixels = camera._screenData;
+        for (i=0; i<SCREEN_HEIGHT; ++i)
+        {
+            for (a=0; a<SCREEN_WIDTH; ++a)
+            {
+                ((uint8_t*)texturePixels)[0] = ((uint8_t*)surfacePixels)[2];
+                ((uint8_t*)texturePixels)[1] = ((uint8_t*)surfacePixels)[1];
+                ((uint8_t*)texturePixels)[2] = ((uint8_t*)surfacePixels)[0];
 
-        SDL_Texture* textureScreen = SDL_CreateTextureFromSurface(renderer, surfaceScreen);
+                texturePixels += SDL_BYTESPERPIXEL(SDL_PIXELFORMAT_RGB888);
+                surfacePixels += 3;
+            }
+        }
+        SDL_UnlockTexture(textureScreen);
+
         SDL_RenderCopy(renderer, textureScreen, NULL, NULL);
-        SDL_DestroyTexture(textureScreen);
-
         SDL_RenderPresent(renderer);
 
-        diff = SDL_GetTicks() - before;
-        printf("ticks %u ms\n", diff);
-        before = SDL_GetTicks();
-        //SDL_Delay(60);
+        ticksTotals += SDL_GetTicks() - ticksBefore;
+
+        if (++ticksCount >= AVERAGE_TICKS_COUNT)
+        {
+            printf("ticks average (%u): %u ms\n", AVERAGE_TICKS_COUNT, ticksTotals/ticksCount);
+            ticksCount = 0;
+            ticksTotals = 0;
+
+            //123ms, average count = 40, (x64, Windows 11, AMD Ryzen 9 3900X 12-Core Processor, debug)
+            //41ms, average count = 40, (x64, Windows 11, AMD Ryzen 9 3900X 12-Core Processor, release)
+        }
+
+        ticksBefore = SDL_GetTicks();
     }
+
+    SDL_FreeSurface(gTextureTest);
+    SDL_DestroyTexture(textureScreen);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

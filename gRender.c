@@ -74,16 +74,14 @@ void DrawTriangles(Triangle* triangles, Index trianglesSize, Camera* camera)
         for (x=0; x<camera->_screenSize._w; ++x)
         {
             //compute primary ray
-            direction._x = -(2 * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1) * camera->_imageAspectRatio * camera->_scale;
-            direction._y = -(1 - 2 * ((float)y + 0.5f) / (float)camera->_screenSize._h) * camera->_scale;
+            direction._x = -(2.0f * ((float)x + 0.5f) / (float)camera->_screenSize._w - 1.0f) * camera->_imageAspectRatio * camera->_scale;
+            direction._y = -(1.0f - 2.0f * ((float)y + 0.5f) / (float)camera->_screenSize._h) * camera->_scale;
             direction._z = -1.0f;
             MultiplyCoordWithMatrix(&camera->_rotationMatrix, &direction, &ray._direction);
 
-            Normalize(&ray._direction);
-
             for (i=0; i<trianglesSize; ++i)
             {
-                if (x==0 && y==0)
+                if (!x && !y)
                 {
                     GetTriangleNormal(triangles+i);
                 }
