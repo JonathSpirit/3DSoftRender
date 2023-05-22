@@ -227,23 +227,26 @@ int main(int argc, char *argv[])
                 }
                 if (event.key.keysym.sym == SDLK_SPACE)
                 {
-                    FILE *ptr;
-                    ptr = fopen("test.csv","w");
+                    FILE *ptr = NULL;
+                    fopen_s(&ptr, "test.csv","w");
 
-                    fprintf(ptr,"\"x\", \"y\", \"z\"\n");
-                    for (i=0; i<monCube._trianglesSize; ++i)
+                    if (ptr != NULL)
                     {
-                        coord = monCube._triangles[i]._v0;
-                        fprintf(ptr,"%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
+                        fprintf(ptr, "\"x\", \"y\", \"z\"\n");
+                        for (i = 0; i < monCube._trianglesSize; ++i)
+                        {
+                            coord = monCube._triangles[i]._v0;
+                            fprintf(ptr, "%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
 
-                        coord = monCube._triangles[i]._v1;
-                        fprintf(ptr,"%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
+                            coord = monCube._triangles[i]._v1;
+                            fprintf(ptr, "%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
 
-                        coord = monCube._triangles[i]._v2;
-                        fprintf(ptr,"%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
+                            coord = monCube._triangles[i]._v2;
+                            fprintf(ptr, "%.2f, %.2f, %.2f\n", coord._x, coord._y, coord._z);
+                        }
+
+                        fclose(ptr);
                     }
-
-                    fclose(ptr);
                 }
             }
         }
@@ -270,8 +273,8 @@ int main(int argc, char *argv[])
                 ((uint8_t*)texturePixels)[1] = ((uint8_t*)surfacePixels)[1];
                 ((uint8_t*)texturePixels)[2] = ((uint8_t*)surfacePixels)[0];
 
-                texturePixels += SDL_BYTESPERPIXEL(SDL_PIXELFORMAT_RGB888);
-                surfacePixels += 3;
+                (uint8_t*)texturePixels += SDL_BYTESPERPIXEL(SDL_PIXELFORMAT_RGB888);
+                (uint8_t*)surfacePixels += 3;
             }
         }
         SDL_UnlockTexture(textureScreen);
